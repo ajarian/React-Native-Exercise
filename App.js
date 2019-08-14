@@ -20,6 +20,7 @@ export default class App extends React.Component {
     LocationService.findUserLocation();
   }
 
+  /* Handles button state changes */
   onButtonToggle() {
     let newState = this.state.showList ? false : true;
 
@@ -29,17 +30,24 @@ export default class App extends React.Component {
   }
 
   render() {
+    let buttonText = this.state.showList ? 'Show Map' : 'Show Nearby Places';
 
     return (
       <View style={styles.container}>
-        <Button onPress={this.onButtonToggle} title="Change Views"/>
-        <Text>Here's what's nearby:</Text>
-        { this.state.showList && 
+        { this.state.showList &&
+        <View style={{flex: 5}}> 
+          <Text>Here's what's nearby:</Text>
           <PlaceList></PlaceList>
+        </View>
         }
         { !this.state.showList &&
+        <View style={{flex: 5}}>
           <Map></Map>
+        </View>
         }
+        <View style={{flex: 1}}>
+          <Button onPress={this.onButtonToggle} title={buttonText}/>
+        </View>
       </View>
     );
   }

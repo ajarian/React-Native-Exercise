@@ -8,16 +8,20 @@ export default class EventList extends React.Component {
         super(props);
 
         this.state = {
-            pointsOfInterest: null
+            loadingData: true,
+            pointsOfInterest: [], 
+            radius: 5000
         };
 
         this.findPlaces = this.findPlaces.bind(this);
+        this.formatPlaces = this.formatPlaces.bind(this);
+        this.requestPlaceData = this.requestPlaceData.bind(this);
     }
 
     componentDidMount() {
         let userLocation = DataStore.getUserLocation();
 
-        // Data store returns a promise if location hasn't been captured
+        // Data store returns a promise if location hasn't yet been captured
         if (userLocation instanceof Promise) {
             userLocation.then((location) => {
                 this.findPlaces(location);
@@ -27,44 +31,85 @@ export default class EventList extends React.Component {
         }
     }
 
+    /* Once location has been obtained, method makes requests for place data.
+    *  Request is executed immediately then every 3 minutes
+    */
     findPlaces(location) {
         this.requestPlaceData(location);
         setInterval(() => this.requestPlaceData(location), 30000);
     }
 
+    /* Method creates list of items to supply flat list by iterating through
+    *  search results 
+    */
+    formatPlaces(placeDataArray) {
+        let pointsOfInterest = [];
+
+        placeDataArray.forEach((place) => {
+            pointsOfInterest.push({
+               key: place.name,
+               type: place.types[0],
+               address: place.vicinity 
+            });
+        });
+
+        this.setState({ 
+            loadingData: false,
+            pointsOfInterest: pointsOfInterest
+        });
+    }
+
+    /* Method uses latitude and longitude to obtain JSON containing 
+    *  nearby places from Google Place API
+    */
     requestPlaceData(userLocation) {
-        console.log('place check');
         let googleURL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?',
-            apiKey = '&key=AIzaSyBHrVemGoGRnAi-PYhWQd29xu2W57MRJMQ',
-            location = `location=${userLocation.latitude},${userLocation.longitude}`
-        let requestURL = googleURL + location + '&radius=8000' + '&rankby=distance' + apiKey;
-        let nearbyEvents = null;
+            location = `location=${userLocation.latitude},${userLocation.longitude}`,
+            radius = `&radius=${this.state.radius}`,
+            apiKey = `&key=AIzaSyBHrVemGoGRnAi-PYhWQd29xu2W57MRJMQ`,
+            requestURL = googleURL + location + radius + apiKey;
 
         fetch(requestURL)
         .then((response) => response.json())
         .then((responseJSON) => {
-            console.log(responseJSON.results);
-            nearbyEvents = responseJSON.results;
+            this.formatPlaces(responseJSON.results);
         })
         .catch((error) => console.error(error));
-
-        this.setState({
-            searchResults: nearbyEvents
-        });
     }
 
     render() {
-        let events = [{key: 'Block Party'}, {key: 'Music Concert'}, {key: 'Restaurant Opening'}];
-        // conditionally hide list if no events
+        let noResults = !this.state.loadingData && this.state.pointsOfInterest === 0,
+            resultsToDisplay = !this.state.loadingData && this.state.pointsOfInterest.length > 0;
 
         return(
             <View>
-                <Text>Current Location: 
-                </Text>
-                <FlatList
-                    style={{width: 150, height: 200, marginTop: 30}} 
-                    data={events}
-                    renderItem={({item}) => <Text>{item.key}</Text>}/>
+                { this.state.loadingData && 
+                <Text>Loading Results</Text>
+                }
+                { noResults && 
+                <Text>Sorry, there are no nearby points of interest.</Text>
+                }
+                { resultsToDisplay &&
+                <View style={{marginTop:10}}>
+                    <Text style={{fontWeight: 'bold'}}>
+                        Name{'\n'}
+                        <Text style={{fontStyle: 'italic'}}>Location Type</Text>{'\n'}
+                        Address
+                    </Text>
+                    <FlatList
+                        style={{width: 350, height: 400, marginTop: 30}} 
+                        data={this.state.pointsOfInterest}
+                        renderItem={({item}) => 
+                            <View style={{marginBottom: 5}}>
+                                <Text>
+                                    {item.key}{'\n'}
+                                    <Text style={{fontStyle: 'italic'}}>{item.type}</Text>{'\n'}
+                                    {item.address}
+                                </Text>
+                            </View>
+                        }/>
+                </View>
+                }
             </View>
         )
     }
