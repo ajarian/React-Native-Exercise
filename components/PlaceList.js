@@ -79,10 +79,15 @@ export default class EventList extends React.Component {
             apiKey = `&key=${Credentials.key}`,
             requestURL = googleURL + location + radius + apiKey;
 
+        // Initiate request, if unsuccessful change loading state
         fetch(requestURL)
         .then((response) => response.json())
         .then((responseJSON) => {
-            this.formatPlaces(responseJSON.results);
+            if (responseJSON.status === 'OK') {
+                this.formatPlaces(responseJSON.results);
+            } else {
+                this.setState({ loadingData: false });
+            }
         })
         .catch((error) => console.error(error));
     }
