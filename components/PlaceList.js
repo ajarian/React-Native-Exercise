@@ -10,6 +10,7 @@ export default class EventList extends React.Component {
 
         this.state = {
             loadingData: true,
+            placeRequestInterval: null,
             pointsOfInterest: [], 
             radius: 5000
         };
@@ -32,12 +33,20 @@ export default class EventList extends React.Component {
         }
     }
 
+    componentWillUnmount() {
+        clearInterval(this.state.placeRequestInterval);
+    }
+
     /* Once location has been obtained, method makes requests for place data.
     *  Request is executed immediately then every 3 minutes
     */
     findPlaces(location) {
         this.requestPlaceData(location);
-        setInterval(() => this.requestPlaceData(location), 30000);
+        let placeRequestInterval = setInterval(() => this.requestPlaceData(location), 30000);
+        
+        this.setState({
+            placeRequestInterval
+        });
     }
 
     /* Method creates list of items to supply flat list by iterating through
