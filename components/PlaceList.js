@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, Text, View } from 'react-native';
 
+import Credentials from '../resources/credential';
 import DataStore from '../resources/DataStore';
 
 export default class EventList extends React.Component {
@@ -66,7 +67,7 @@ export default class EventList extends React.Component {
         let googleURL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?',
             location = `location=${userLocation.latitude},${userLocation.longitude}`,
             radius = `&radius=${this.state.radius}`,
-            apiKey = `&key=AIzaSyBHrVemGoGRnAi-PYhWQd29xu2W57MRJMQ`,
+            apiKey = `&key=${Credentials.key}`,
             requestURL = googleURL + location + radius + apiKey;
 
         fetch(requestURL)
